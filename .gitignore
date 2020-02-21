@@ -1,4 +1,5 @@
-.idea
-target
+.idea/
+target/
+doobie/target/**
 *.class
 *.log
