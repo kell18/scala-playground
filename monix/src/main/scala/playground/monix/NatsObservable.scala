@@ -1,5 +1,6 @@
 package playground.monix
 
+import cats.effect.Resource
 import io.nats.streaming.{Message, MessageHandler, StreamingConnection, StreamingConnectionFactory, Subscription, SubscriptionOptions}
 import cats.implicits._
 import monix.catnap.MVar
@@ -22,13 +23,17 @@ object NatsObservable {
       )
   )
 
-  def autoAck(subscribe: MessageHandler => Subscription): Observable[Message] =
-    autoAck(subscribe, dropOldOnOverflow)
-
-  def autoAck(
+  // .. test it works as Observable.unit.bracket https://monix.io/blog/2018/11/07/tutorial-bracket.html
+  def asAutoAck(
     subscribe: MessageHandler => Subscription,
-    overflowStrategy: OverflowStrategy.Synchronous[Message]
-  ): Observable[Message] = Observable.defer {
+    overflowStrategy: OverflowStrategy.Synchronous[Message] = dropOldOnOverflow
+  ): Observable[Message] =
+    asResource(subscribe, dropOldOnOverflow).mapEval(_.use(msg => Task.pure(msg)))
+
+  def asResource(
+    subscribe: MessageHandler => Subscription,
+    overflowStrategy: OverflowStrategy.Synchronous[Message] = dropOldOnOverflow
+  ): Observable[Resource[Task, Message]] = Observable.defer {
     val seqNumsQueue = mutable.Set[Long]()
 
     Observable
@@ -46,15 +51,48 @@ object NatsObservable {
         val subscription = subscribe(msgHandler)
         Cancelable(() => Try(subscription.close()))
       }
-      .filter(m => seqNumsQueue.contains(m.getSequence))
-      .flatMap(msg => Observable.unit.bracket(_ => Observable.pure(msg))(release = _ => Task(msg.ack())))
+      .filter(msg => seqNumsQueue.contains(msg.getSequence))
+      .map(msg =>
+        Resource.make(Task.pure(msg))(doneMsg =>
+          Task
+            .evalOnce { // very important because Task is lazy, without evalOnes it might repeat this thing (in theory)
+              doneMsg.ack()
+              seqNumsQueue -= doneMsg.getSequence
+            }
+        )
+      )
+    // .flatMap(msg => Observable.unit.bracket(_ => Observable.pure(msg))(release = _ => Task(msg.ack())))
   }
+}
+
+object TaskExample extends App {
+
+  import monix.execution.Scheduler.Implicits.global
+
+  val task = Task(println("Nothing happens on creation!"))
+    .map(_ => 1 + 1)
+    .flatMap(_ => computePi)
+    .delayExecution(1.second)
+
+  val future = task.runToFuture
+  val cancelable = task.runAsync { /* handle results */ }
+
+  cancelable.cancel()
+
+  val newTask = Task.fromFuture(future)
+  // Or if you have not yet running future (eg function of a future):
+  val lazyTask = Task.deferFuture(future)
+
+  def computePi: Task[Double] = ???
+
+  // If we change our mind...
+  cancelable.cancel()
 }
 
 object Tests extends App {
 
   import monix.execution.Scheduler.Implicits.global
-  import NatsObservable.autoAck
+  import NatsObservable.asAutoAck
 
   val natsAckTmOut = 2.seconds
 
@@ -82,7 +120,7 @@ object Tests extends App {
     }
   }
 
-  val observalbe = autoAck(msgHandler => connection.subscribe("pe-matcher-staging.au", msgHandler, options.build()))
+  val observalbe = asAutoAck(msgHandler => connection.subscribe("pe-matcher-staging.au", msgHandler, options.build()))
   val task = observalbe.consumeWith(consumer)
 
   task.runSyncUnsafe(100.seconds)

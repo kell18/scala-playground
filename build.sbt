@@ -6,8 +6,7 @@ name := "scala-playground"
 lazy val commonSettings = Seq(
   organization := "com.dreamlines",
   version := "1.0-SNAPSHOT",
-  scalaVersion := "2.13.1",
-  scalacOptions += "-Ypartial-unification"
+  scalaVersion := "2.13.1"
 )
 
 lazy val scalaPlayground = (project in file("."))
