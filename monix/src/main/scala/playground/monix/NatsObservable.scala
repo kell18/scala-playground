@@ -1,6 +1,6 @@
 package playground.monix
 
-import cats.effect.Resource
+import cats.effect.{ExitCase, Resource}
 import io.nats.streaming.{Message, MessageHandler, StreamingConnection, StreamingConnectionFactory, Subscription, SubscriptionOptions}
 import cats.implicits._
 import monix.catnap.MVar
@@ -15,6 +15,36 @@ import scala.util.Try
 
 object NatsObservable {
 
+  def asAutoAck(subscribe: MessageHandler => Subscription): Observable[Message] = Observable.defer {
+    val seenSequenceNums = mutable.Set[Long]()
+
+    Observable
+      .create[Message](dropOldOnOverflow) { subscriber =>
+        val msgHandler = new MessageHandler {
+          override def onMessage(msg: Message): Unit =
+            // if the message redelivered while being in the queue
+            if (!seenSequenceNums.add(msg.getSequence)) {
+              println(s"NatsObservable: skip seen msg: ${msg.getSequence}")
+            } else {
+              subscriber.onNext(msg)
+            }
+        }
+        val subscription = subscribe(msgHandler)
+        Cancelable(() => Try(subscription.close()))
+      }
+      .flatMap(msg =>
+        Observable.unit.bracketCase(_ => Observable.delay(msg))(release = (_, exitCase) =>
+          Task.evalOnce {
+            // Note: different strategies might be used, eg do ack on ExitCase.Error as well
+            if (exitCase == ExitCase.Completed) {
+              msg.ack()
+            }
+            seenSequenceNums -= msg.getSequence
+          }
+        )
+      )
+  }
+
   def dropOldOnOverflow[A] = OverflowStrategy.DropOldAndSignal[A](
     100000,
     buffSize =>
@@ -22,51 +52,6 @@ object NatsObservable {
         new RuntimeException(s"Buffer is overflow (got $buffSize elements), dropping old ones")
       )
   )
-
-  def asAutoAck(subscribe: MessageHandler => Subscription): Observable[Message] =
-    Observable.defer {
-      val seqNumsQueue = mutable.Set[Long]()
-
-      Observable
-        .create[Message](dropOldOnOverflow) { subscriber =>
-          val msgHandler = new MessageHandler {
-            override def onMessage(msg: Message): Unit =
-            // if the message redelivered while being in the queue
-              if (!seqNumsQueue.add(msg.getSequence)) {
-                println(s"Observable: skip seen msg: ${msg.getSequence}")
-              } else {
-                println(s"Observable: push new msg: ${msg.getSequence}")
-                subscriber.onNext(msg)
-              }
-          }
-          val subscription = subscribe(msgHandler)
-          Cancelable(() => Try(subscription.close()))
-        }
-        .flatMap(msg =>
-          Observable.unit.bracketCase(_ => Observable.delay(msg))(release = (_, exitCase) =>
-            Task.evalOnce {
-              seqNumsQueue -= msg.getSequence
-              exitCase match {
-                case _ => msg.ack()
-              }
-              println(s"Observable: acknowledging ${msg.getSequence}")
-            }
-          )
-        )
-      /*.map(msg =>
-          Resource.makeCase(Observable.delay(msg)) { case (doneMsg, reason) =>
-            // important to use evalOnce because Task is lazy, otherwise it might repeat this thing (in theory)
-            Observable.evalOnce {
-              reason match {
-                case ExitCase.Completed => doneMsg.ack()
-                case _ => // do not ack in case of Failure/Cancellation
-              }
-              seqNumsQueue -= doneMsg.getSequence
-              println(s"Observable: acknowledging ${doneMsg.getSequence}")
-            }
-          }
-        )*/
-    }
 }
 
 object Tests extends App {
