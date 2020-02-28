@@ -15,7 +15,7 @@ import scala.util.Try
 
 object NatsObservable {
 
-  def asAutoAck(subscribe: MessageHandler => Subscription): Observable[Message] = Observable.defer {
+  def withAutomaticAcks(subscribe: MessageHandler => Subscription): Observable[Message] = Observable.defer {
     val seenSequenceNums = mutable.Set[Long]()
 
     Observable
@@ -57,7 +57,6 @@ object NatsObservable {
 object Tests extends App {
 
   import monix.execution.Scheduler.Implicits.global
-  import NatsObservable.asAutoAck
   import NatsTestSetup._
 
   val deduplicingConsumer = Consumer.foldLeft[Set[Long], Message](Set.empty) {
@@ -67,7 +66,7 @@ object Tests extends App {
       seenMessages + msg.getSequence
   }
 
-  val events = asAutoAck(subscribeToNats)
+  val events = NatsObservable.withAutomaticAcks(subscribeToNats)
   val task = events.consumeWith(deduplicingConsumer)
 
   task.runSyncUnsafe(100.seconds)

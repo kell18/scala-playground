@@ -22,7 +22,7 @@ object ResourceNats extends App {
   import NatsTestSetup._
 
 
-  val events = NatsObservable.asAutoAck(subscribeToNats)
+  val events = NatsObservable.withAutomaticAcks(subscribeToNats)
     .doOnNextAck {
       case (msg, ack) => Task.delay(println(s"-- Got ack ($ack) for ${msg.getSequence}"))
     }
