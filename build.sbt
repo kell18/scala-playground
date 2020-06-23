@@ -6,7 +6,7 @@ name := "scala-playground"
 lazy val commonSettings = Seq(
   organization := "com.dreamlines",
   version := "1.0-SNAPSHOT",
-  scalaVersion := "2.13.1"
+  scalaVersion := "2.13.2"
 )
 
 lazy val scalaPlayground = (project in file("."))
@@ -28,6 +28,20 @@ lazy val common = (project in file("common"))
     )
   )
 
+lazy val doobieLive = (project in file("doobie-live"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.tpolecat" %% "doobie-postgres" % "0.8.8",
+      "org.tpolecat" %% "doobie-hikari"    % "0.8.8",
+      "org.tpolecat" %% "doobie-postgres"  % "0.8.8", // Postgres driver 42.2.9 + type mappings.
+      "org.tpolecat" %% "doobie-scalatest" % "0.8.8" % "test",
+
+      "mysql" % "mysql-connector-java" % "6.0.6"
+    )
+  )
+  .dependsOn(common)
+
 lazy val doobie = (project in file("doobie"))
   .settings(commonSettings)
   .settings(
@@ -36,6 +50,19 @@ lazy val doobie = (project in file("doobie"))
       "org.tpolecat" %% "doobie-hikari"    % "0.8.8",
       "org.tpolecat" %% "doobie-postgres"  % "0.8.8", // Postgres driver 42.2.9 + type mappings.
       "org.tpolecat" %% "doobie-scalatest" % "0.8.8" % "test",
+
+      "mysql" % "mysql-connector-java" % "6.0.6"
+    )
+  )
+  .dependsOn(common)
+
+lazy val scalikeJdbc = (project in file("scalike-jdbc"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalikejdbc" %% "scalikejdbc"        % "3.4.+",
+      "com.h2database"  %  "h2"                 % "1.4.+",
+      "ch.qos.logback"  %  "logback-classic"    % "1.2.+",
 
       "mysql" % "mysql-connector-java" % "6.0.6"
     )
@@ -52,7 +79,25 @@ lazy val monix = (project in file("monix"))
       "com.typesafe.akka" %% "akka-stream" % "2.5.26",
 
       "io.monix" %% "monix" % "3.1.0"
-    )
+    ),
+    mainClass in assembly := Some("playground.monix.ResourceNats"),
+    assemblyJarName in assembly := "app.jar",
+  )
+  .dependsOn(common)
+
+lazy val tapir = (project in file("tapir"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.16.0",
+
+      "com.typesafe.akka" %% "akka-http"   % "10.1.11",
+      "com.typesafe.akka" %% "akka-stream" % "2.5.26",
+
+      "io.monix" %% "monix" % "3.1.0"
+    ),
+    mainClass in assembly := Some("playground.monix.ResourceNats"),
+    assemblyJarName in assembly := "app.jar",
   )
   .dependsOn(common)
 
