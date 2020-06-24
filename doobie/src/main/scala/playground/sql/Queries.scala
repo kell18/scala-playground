@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 object Queries {
 
-  def selectCity(cName: String) =
+  def selectCity(cName: String): doobie.Query0[City] =
     sql"SELECT id, name, population, area, link FROM city WHERE name = $cName ".query[City]
 
   def selectMetroSystem(cityId: CityId) =

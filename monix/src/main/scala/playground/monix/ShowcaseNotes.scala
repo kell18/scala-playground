@@ -18,62 +18,62 @@ object ShowcaseNotes
 
 object ResourceNats extends App {
 
-  import monix.execution.Scheduler.Implicits.global
-  import NatsTestSetup._
+   import monix.execution.Scheduler.Implicits.global
+   import NatsTestSetup._
 
 
-  val events = NatsObservable.withAutomaticAcks(subscribeToNats)
-    .doOnNextAck {
-      case (msg, ack) => Task.delay(println(s"-- Got ack ($ack) for ${msg.getSequence}"))
-    }
-    .doOnNext { msg =>
-      Task.delay(println(s"-- Received msg seq: ${msg.getSequence}"))
-    }
-    .mapEval(longSideEffect)
-    .mapEval(longSideEffect)
-    .mapEval(longSideEffect)
-    .doOnNext { msg =>
-      Task.eval(println(s"-- Processed: ${msg.getSequence}"))
-    }
+   val events = NatsObservable.withAutomaticAcks(subscribeToNats)
+     .doOnNextAck {
+       case (msg, ack) => Task.delay(println(s"-- Got ack ($ack) for ${msg.getSequence}"))
+     }
+     .doOnNext { msg =>
+       Task.delay(println(s"-- Received msg seq: ${msg.getSequence}"))
+     }
+     .mapEval(longSideEffect)
+     .mapEval(longSideEffect)
+     .mapEval(longSideEffect)
+     .doOnNext { msg =>
+       Task.eval(println(s"-- Processed: ${msg.getSequence}"))
+     }
 
-  val task = events.consumeWith(deduplicingConsumer)
+   val task = events.consumeWith(deduplicingConsumer)
 
-  task.runSyncUnsafe(100.seconds)
+   task.runSyncUnsafe(100.seconds)
 
-  println("Done.")
+   println("Done.")
 
 
 
-  def longSideEffect(msg: Message): Task[Message] = Task {
-    Thread.sleep(1000)
-    msg
-  }
+   def longSideEffect(msg: Message): Task[Message] = Task {
+     Thread.sleep(1000)
+     msg
+   }
 
-}
+ }
 
-object TaskAndFuture extends App {
-  import monix.execution.Scheduler.Implicits.global
+ object TaskAndFuture extends App {
+   import monix.execution.Scheduler.Implicits.global
 
-  val ftr = Future {
-    println("Started")
-    Thread.sleep(3000)
-    println("T1")
-    Thread.sleep(3000)
-    println("T2")
-    Thread.sleep(3000)
-    println("T3")
-    Thread.sleep(3000)
-  }
+   val ftr = Future {
+     println("Started")
+     Thread.sleep(3000)
+     println("T1")
+     Thread.sleep(3000)
+     println("T2")
+     Thread.sleep(3000)
+     println("T3")
+     Thread.sleep(3000)
+   }
 
-  Thread.sleep(300)
+   Thread.sleep(300)
 
-  val tsk = Task.deferFuture(ftr).doOnCancel(Task(println("Canceled")))
+   val tsk = Task.deferFuture(ftr).doOnCancel(Task(println("Canceled")))
 
-  val cancelable = tsk.runToFuture
+   val cancelable = tsk.runToFuture
 
-  StdIn.readLine()
+   StdIn.readLine()
 
-  cancelable.cancel()
+   cancelable.cancel()
 
-  println("Done.")
+  println("It's working!")
 }

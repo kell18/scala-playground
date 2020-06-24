@@ -16,21 +16,6 @@ object Starter extends IOApp {
 
   override def run(args: List[String]) = selectCity
 
-  def insertKazan =
-    Queries
-      .insertCity("Kazan'", 1251969, 425.3f, Some("https://visit-tatarstan.com/en/"))
-      .run
-      .transact(Common.transactor)
-      .map(_ => ExitCode.Success)
-
-  def insertBarcelona =
-    Queries
-      .insertCity("Barcelona", 1620343, 101.4f, Some("https://www.barcelona.com"))
-      .run
-      .transact(Common.transactor)
-      .map(_ => ExitCode.Success)
-
-
   def selectCity =
     Queries
       .selectMetroSystem(CityId(1))
@@ -38,6 +23,25 @@ object Starter extends IOApp {
       .map(println)
       .transact(Common.transactor)
       .map(_ => ExitCode.Success)
+
+  def insertKazan() =
+    Queries
+      .insertCity("Kazan'", 1251969, 425.3f, Some("https://visit-tatarstan.com/en/"))
+      .run
+
+  def insertBarcelona() =
+    Queries
+      .insertCity("Barcelona", 1620343, 101.4f, Some("https://www.barcelona.com"))
+      .run
+
+  def insertTx() = {
+    val twoInserts = for {
+      _ <- insertKazan()
+      _ <- insertBarcelona()
+    } yield ()
+
+    twoInserts.transact(Common.transactor)
+  }
 
 
 
