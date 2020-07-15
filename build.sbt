@@ -17,12 +17,13 @@ lazy val common = (project in file("common"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.typelevel"  %% "cats-core"   % "2.1.0",
-      "org.typelevel"  %% "cats-effect" % "2.1.1",
-      "org.scalactic"  %% "scalactic"   % "3.1.1",
-      "org.scalatest"  %% "scalatest"   % "3.1.1" % "test",
-      "org.postgresql" % "postgresql"   % "42.0.0",
-      "org.flywaydb"   % "flyway-core"  % "4.1.2"
+      "org.typelevel"              %% "cats-core"   % "2.1.0",
+      "org.typelevel"              %% "cats-effect" % "2.1.1",
+      "org.scalactic"              %% "scalactic"   % "3.1.1",
+      "org.scalatest"              %% "scalatest"   % "3.1.1" % "test",
+      "org.postgresql"             % "postgresql"   % "42.0.0",
+      "org.flywaydb"               % "flyway-core"  % "4.1.2",
+      "com.softwaremill.quicklens" %% "quicklens"   % "1.6.0"
     )
   )
 
@@ -43,11 +44,12 @@ lazy val doobie = (project in file("doobie"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.tpolecat" %% "doobie-postgres"     % "0.8.8",
-      "org.tpolecat" %% "doobie-hikari"       % "0.8.8",
-      "org.tpolecat" %% "doobie-postgres"     % "0.8.8", // Postgres driver 42.2.9 + type mappings.
-      "org.tpolecat" %% "doobie-scalatest"    % "0.8.8" % "test",
-      "mysql"        % "mysql-connector-java" % "6.0.6"
+      "org.tpolecat"      %% "doobie-postgres"     % "0.8.8",
+      "org.tpolecat"      %% "doobie-hikari"       % "0.8.8",
+      "org.tpolecat"      %% "doobie-postgres"     % "0.8.8", // Postgres driver 42.2.9 + type mappings.
+      "org.tpolecat"      %% "doobie-scalatest"    % "0.8.8" % "test",
+      "mysql"             % "mysql-connector-java" % "6.0.6",
+      "io.chrisdavenport" %% "circuit"             % "0.3.1"
     )
   )
   .dependsOn(common)
@@ -116,5 +118,32 @@ lazy val prettyP = (project in file("prettyP"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq("com.lihaoyi" %% "pprint" % "0.5.6")
+  )
+  .dependsOn(common)
+
+lazy val effects = (project in file("effects"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-http"   % "10.1.11",
+      "com.typesafe.akka" %% "akka-stream" % "2.5.26",
+      "io.monix"          %% "monix"       % "3.1.0",
+      "dev.zio"           %% "zio"         % "1.0.0-RC21-2",
+      "ru.tinkoff"        %% "tofu"        % "0.7.8"
+    )
+  )
+  .dependsOn(common)
+
+
+lazy val effectsLive = (project in file("effects-live"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-http"   % "10.1.11",
+      "com.typesafe.akka" %% "akka-stream" % "2.5.26",
+      "io.monix"          %% "monix"       % "3.1.0",
+      "dev.zio"           %% "zio"         % "1.0.0-RC21-2",
+      "ru.tinkoff"        %% "tofu"        % "0.7.8"
+    )
   )
   .dependsOn(common)
