@@ -44,12 +44,11 @@ lazy val doobie = (project in file("doobie"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.tpolecat"      %% "doobie-postgres"     % "0.8.8",
-      "org.tpolecat"      %% "doobie-hikari"       % "0.8.8",
-      "org.tpolecat"      %% "doobie-postgres"     % "0.8.8", // Postgres driver 42.2.9 + type mappings.
-      "org.tpolecat"      %% "doobie-scalatest"    % "0.8.8" % "test",
-      "mysql"             % "mysql-connector-java" % "6.0.6",
-      "io.chrisdavenport" %% "circuit"             % "0.3.1"
+      "org.tpolecat" %% "doobie-postgres"     % "0.8.8",
+      "org.tpolecat" %% "doobie-hikari"       % "0.8.8",
+      "org.tpolecat" %% "doobie-postgres"     % "0.8.8", // Postgres driver 42.2.9 + type mappings.
+      "org.tpolecat" %% "doobie-scalatest"    % "0.8.8" % "test",
+      "mysql"        % "mysql-connector-java" % "6.0.6"
     )
   )
   .dependsOn(common)
@@ -100,14 +99,34 @@ lazy val monix = (project in file("monix"))
   )
   .dependsOn(common)
 
+val circeVersion = "0.12.3"
+
+lazy val sttp = (project in file("sttp"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.client3" %% "core"          % "3.0.0-RC6",
+      "com.typesafe.akka"             %% "akka-http"     % "10.1.11",
+      "io.circe"                      %% "circe-core"    % circeVersion,
+      "io.circe"                      %% "circe-generic" % circeVersion,
+      "io.circe"                      %% "circe-parser"  % circeVersion,
+      "org.jsoup"                     % "jsoup"          % "1.13.1",
+      "com.nrinaudo"                  %% "kantan.csv"    % "0.6.1"
+    )
+  )
+  .dependsOn(common)
+
 lazy val tapir = (project in file("tapir"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.tapir" %% "tapir-core"  % "0.16.0",
-      "com.typesafe.akka"           %% "akka-http"   % "10.1.11",
-      "com.typesafe.akka"           %% "akka-stream" % "2.5.26",
-      "io.monix"                    %% "monix"       % "3.1.0"
+      "com.softwaremill.sttp.tapir"  %% "tapir-core"                      % "0.16.0",
+      "com.typesafe.akka"            %% "akka-http"                       % "10.1.11",
+      "com.typesafe.akka"            %% "akka-stream"                     % "2.5.26",
+      "io.monix"                     %% "monix"                           % "3.1.0",
+      "com.softwaremill.sttp.client" %% "core"                            % "2.2.9",
+      "com.softwaremill.sttp.client" %% "async-http-client-backend-monix" % "2.2.9",
+      "io.circe"                     %% "circe-generic"                   % "0.12.1"
     ),
     mainClass in assembly := Some("playground.monix.ResourceNats"),
     assemblyJarName in assembly := "app.jar"
@@ -125,6 +144,7 @@ lazy val effects = (project in file("effects"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
+      "co.fs2"            %% "fs2-core"    % "2.5.3",
       "com.typesafe.akka" %% "akka-http"   % "10.1.11",
       "com.typesafe.akka" %% "akka-stream" % "2.5.26",
       "io.monix"          %% "monix"       % "3.1.0",
@@ -134,6 +154,17 @@ lazy val effects = (project in file("effects"))
   )
   .dependsOn(common)
 
+lazy val effects3 = (project in file("effects3"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-http"   % "10.1.11",
+      "com.typesafe.akka" %% "akka-stream" % "2.5.26",
+      "io.monix"          %% "monix"       % "3.4.0",
+      "org.typelevel"     %% "cats-effect" % "3.1.1"
+    )
+  )
+  .dependsOn(common)
 
 lazy val effectsLive = (project in file("effects-live"))
   .settings(commonSettings)

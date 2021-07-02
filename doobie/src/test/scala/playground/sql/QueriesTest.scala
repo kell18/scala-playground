@@ -11,6 +11,8 @@ import scala.concurrent.ExecutionContext
 class QueriesTest extends WordSpec with Matchers with doobie.scalatest.IOChecker {
   implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
+  // .. Research this part, maybe it's possible to set logging like that
+  // .. Think about Zio
   val transactor = Transactor.after.set(Common.transactor, HC.rollback)
 
   "Queries test" should {

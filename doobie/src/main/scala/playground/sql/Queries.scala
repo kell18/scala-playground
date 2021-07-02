@@ -12,7 +12,8 @@ object Queries {
     sql"SELECT id, name, population, area, link FROM city WHERE name = $cName ".query[City]
 
   def selectMetroSystem(cityId: CityId) =
-    sql"SELECT id, city_id, name, daily_ridership FROM metro_system WHERE city_id = $cityId".query[MetroSystemWithCity]
+    sql"SELECT id, city_id, name, daily_ridership FROM metro_system WHERE city_id = $cityId"
+      .queryWithLogHandler[MetroSystemWithCity](LogHandler(ev => println(s"LogEvent: $ev")))
 
   def selectMetroSystemsWithCityNames =
     sql"""

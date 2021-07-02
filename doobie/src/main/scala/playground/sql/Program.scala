@@ -8,8 +8,6 @@ import doobie.implicits._
 import doobie.free.connection.ConnectionIO
 import doobie.util.transactor.Transactor
 import CityService._
-import scala.concurrent.Future
-import scala.language.higherKinds
 
 class Program[F[_]: Monad](cityService: CityService[F]) {
 
