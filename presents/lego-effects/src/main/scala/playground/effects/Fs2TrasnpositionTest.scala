@@ -1,14 +1,18 @@
 package playground.effects
 
-import java.util.concurrent.Executors
 import cats.implicits._
 import cats.effect._
+import fs2.{Stream => FStream}
 import cats.effect.implicits._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
+trait RepeatMerge extends IOApp {
+  val s1 = FStream("A","B","C","D","E").evalTap(v => IO(println(s"$v in S1")))
+  val r: FStream[IO, Either[Int, String]] = s1.map(_.asRight).merge(FStream.fixedRate(???).map(_ => 123.asLeft))
+}
+
 object Fs2Test extends IOApp { // used for Fs2-bases solution for parallel Atlas search function
-  import fs2.{Stream => FStream}
   val s1 = FStream("A","B","C","D","E").evalTap(v => IO(println(s"$v in S1")))
 
   val s2 = FStream(1, 2, 3, 4, 5).evalTap(v => IO(println(s"$v in S22")))

@@ -6,11 +6,9 @@ import cats.implicits._
 import monix.catnap.MVar
 import monix.eval.{Coeval, Task}
 import monix.execution.Cancelable
-import monix.reactive.{Consumer, Observable, Observer, OverflowStrategy}
-import monix.reactive.observers.Subscriber
+import monix.reactive.{Consumer, Observable, OverflowStrategy}
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.io.StdIn
 import scala.util.Try
 
 object NatsObservable {
